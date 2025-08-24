@@ -4,13 +4,21 @@ import cors from "cors"
 import dotenv from "dotenv";
 import dbConnection from "./database/dbConnection.js";
 
-dotenv.config({path : "./.env"});
+import holdingRouter from "./routers/holding.route.js";
+import positionRouter from "./routers/position.router.js";
+
+dotenv.config();
 const app = express();
 
 app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(urlencoded({extended: true}));
+
+
+// router calls
+app.use("/api/v1/holdings", holdingRouter);
+app.use("/api/v1/positions", positionRouter);
 
 
 app.get('/', (req, res)=> {
