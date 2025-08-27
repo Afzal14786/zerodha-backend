@@ -1,11 +1,10 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 /**
  * @berif : Before Creating The Schema Some Of The Data We Are Generaing For Security And Testing Puspose .
  * Since This is a project only, so from user, we cannnot take `BankAccount`, `Demat(BO) Number, PanCard Number
  * and some data like segment[MF, BSE, NSE] is always static |`
  */
-
 
 const userSchema = new mongoose.Schema({
   userId: {
@@ -20,8 +19,13 @@ const userSchema = new mongoose.Schema({
     trim: true,
   },
 
+  email: {
+    type: String,
+    required: true,
+  },
+  
   phone: {
-    type: String, // better keep it as String (to preserve leading 0s if any)
+    type: String,
     unique: true,
     required: true,
     match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
@@ -33,7 +37,7 @@ const userSchema = new mongoose.Schema({
   },
 
   profile: {
-    type: String, // URL of Cloudinary image
+    type: String,
     default: "",
   },
 
