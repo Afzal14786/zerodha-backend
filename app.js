@@ -8,7 +8,7 @@ import holdingRouter from "./routers/holding.route.js";
 import positionRouter from "./routers/position.router.js";
 import testRoute from "./routers/user/test.route.js";
 
-dotenv.config();
+dotenv.config({quiet:true});
 const app = express();
 
 app.use(cors());
