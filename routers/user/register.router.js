@@ -1,12 +1,12 @@
 import express from "express";
-import { wrapError } from "../../middleware/wrapError.js";
+import wrapError  from "../../middleware/wrapError.js";
 
 import {
   phoneSignUp,
   verifyPhoneOtp,
   saveLeadAndVerifyOtp,
   setPasswordAndCreateAccount,
-} from "../../controller/user/register.user.js";
+} from "../../controller/user/user.register.js";
 
 const router = express.Router();
 
