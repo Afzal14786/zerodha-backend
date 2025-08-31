@@ -24,11 +24,23 @@ export const generateAccountNumber = () => {
 
 // Generate unique user id (7 alphanumeric chars)
 export const generateUserId = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const digits = "123456789";
     let userId = "";
-    for (let i = 0; i < 7; i++) {
+
+    // generate first 3
+    for (let i = 0; i < 3; i++) {
         userId += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+
+    // second 3 digits
+    for (let i = 0; i < 3; ++i) {
+        userId += digits.charAt(Math.floor(Math.random() * digits.length));
+    }
+
+    // last digit
+    userId += chars.charAt(Math.floor(Math.random() * chars.length));
+
     return userId;
 };
 

@@ -14,9 +14,19 @@ import {
 import sendOtpToEmail from "../../helper/sendOtpToEmail.js";
 import admin from "../../config/firebaseAdmin.js";
 
+/**
+ * this function  normalize the phone number format
+ */
+
+const normalizePhone = (phone) => {
+  if (phone.startsWith("+91")) {
+    return phone.slice(-10);
+  }
+  return phone;
+};
+
 export const phoneSignUp = async (req, res) => {
   const { phone } = req.body;
-
   if (!phone) {
     return res.status(400).json({
       success: false,
@@ -24,7 +34,8 @@ export const phoneSignUp = async (req, res) => {
     });
   }
 
-  const existingUser = await userModel.findne({ phone });
+  const tenDigitPhone = normalizePhone(phone);
+  const existingUser = await userModel.findOne({ phone: tenDigitPhone });
   if (existingUser) {
     return res.status(400).json({
       success: false,
@@ -48,6 +59,17 @@ export const verifyPhoneOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Phone number not found in token",
+      });
+    }
+
+    const tenDigitPhone = normalizePhone(verifiedPhone);
+
+    const existingUser = await userModel.findOne({ phone: tenDigitPhone });
+    if (existingUser) {
+      return res.json({
+        success: true,
+        userExists: true,
+        message: "User already have an account with the same number."
       });
     }
 
@@ -77,9 +99,10 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
       });
     }
 
-    await redis.hSet(`lead:${phone}`, { name, email });
+    // Use the phone number as received from the frontend for Redis key
+    await redis.hset(`lead:${phone}`, 'name', name, 'email', email);
     const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    await redis.Ex(`otp:email:${email}`, 300, emailOtp);
+    await redis.set(`otp:email:${email}`, emailOtp, "EX", 300);
 
     await sendOtpToEmail(email, emailOtp);
 
@@ -98,7 +121,7 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
       });
     }
 
-    await redis.set(`verified:email:${email}`, "true", { EX: 600 });
+    await redis.set(`verified:email:${email}`, "true", "EX", 600);
     return res.json({
       success: true,
       message: "Email verified",
@@ -113,7 +136,10 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
 
 export const setPasswordAndCreateAccount = async (req, res) => {
   const { phone, password } = req.body;
-  const phoneVerified = await redis.get(`verified:phone:${phone}`);
+  
+  const normalizedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+
+  const phoneVerified = await redis.get(`verified:phone:${normalizedPhone}`);
   if (phoneVerified !== "true") {
     return res.status(400).json({
       success: false,
@@ -121,11 +147,22 @@ export const setPasswordAndCreateAccount = async (req, res) => {
     });
   }
 
-  const leadInfo = await redis.hGetAll(`lead:${phone}`);
-  if (!leadInfo || !leadInfo.email) {
+  // Check again to prevent duplicate accounts and ensure consistency
+  const tenDigitPhone = normalizePhone(normalizedPhone);
+  const existingUser = await userModel.findOne({ phone: tenDigitPhone });
+  if (existingUser) {
     return res.status(400).json({
       success: false,
-      message: "Lead info missing",
+      message: "User already exists. Cannot create a new account.",
+    });
+  }
+  
+  const leadInfo = await redis.hgetall(`lead:${normalizedPhone}`);
+
+  if (!leadInfo || !leadInfo.email || !leadInfo.name) {
+    return res.status(400).json({
+      success: false,
+      message: "Lead info missing to complete",
     });
   }
 
@@ -136,50 +173,65 @@ export const setPasswordAndCreateAccount = async (req, res) => {
       message: "Email not verified",
     });
   }
+  
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = generateUserId();
+    const bankAccountNumber = generateAccountNumber();
+    const bankName = generateBankName();
+    const dematNumber = generateDematNumber();
+    const panCardNumber = generatePanCardNumber();
+    const supportCode = generateSupportCode();
+    
+    let profileImage = null;
+    try {
+        profileImage = await generateUserImage(leadInfo.name);
+    } catch (err) {
+        console.error("Failed to generate user image, continuing without it.", err);
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const userId = generateUserId();
-  const accountNumber = generateAccountNumber();
-  const bankName = generateBankName();
-  const dematNumber = generateDematNumber();
-  const pancardNumber = generatePanCardNumber();
-  const supportCode = generateSupportCode();
-  const profileImage = generateUserImage(leadInfo.name);
+    const newUser = new userModel({
+      userId,
+      name: leadInfo.name,
+      email: leadInfo.email,
+      phone: tenDigitPhone, 
+      password: hashedPassword,
+      profile: profileImage,
+      bankAccountNumber,
+      bankName,
+      panCardNumber,
+      dematNumber,
+      supportCode,
+    });
 
-  const newUser = new userModel({
-    userId,
-    name: leadInfo.name,
-    email: leadInfo.email,
-    phone,
-    password: hashedPassword,
-    profile: profileImage,
-    accountNumber,
-    bankName,
-    pancardNumber,
-    dematNumber,
-    supportCode,
-  });
+    await newUser.save();
 
-  await newUser.save();
+    const accessToken = generateAccessToken({ id: newUser._id });
+    const refreshToken = generateRefreshToken({ id: newUser._id });
 
-  const accessToken = generateAccessToken({ id: newUser._id });
-  const refreshToken = generateRefreshToken({ id: newUser._id });
+    await redis.set(`refresh:${newUser._id}`, refreshToken, 'EX', 7 * 24 * 3600);
 
-  await redis.set(`refresh:${newUser._id}`, refreshToken, {
-    EX: 7 * 24 * 3600,
-  });
-
-  return res.status(201).json({
-    success: true,
-    message: "Account created successfully",
-    data: {
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
+    return res.status(201).json({
+      success: true,
+      message: "Account created successfully",
+      data: {
+        user: {
+          id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+        },
+        tokens: { accessToken, refreshToken },
       },
-      tokens: { accessToken, refreshToken },
-    },
-  });
+    });
+
+  } catch (err) {
+    console.error("Mongoose Save Error:", err.name, err.message);
+    console.error("Full Error Object:", err);
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create account. Please try again.",
+    });
+  }
 };

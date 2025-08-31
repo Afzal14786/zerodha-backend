@@ -1,11 +1,5 @@
 import mongoose from "mongoose";
 
-/**
- * @berif : Before Creating The Schema Some Of The Data We Are Generaing For Security And Testing Puspose .
- * Since This is a project only, so from user, we cannnot take `BankAccount`, `Demat(BO) Number, PanCard Number
- * and some data like segment[MF, BSE, NSE] is always static |`
- */
-
 const userSchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -23,7 +17,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
+
   phone: {
     type: String,
     unique: true,
@@ -41,10 +35,10 @@ const userSchema = new mongoose.Schema({
     default: "",
   },
 
-  // Auto-generated fields
   bankAccountNumber: {
     type: String,
     unique: true,
+    required: true,
   },
 
   bankName: {
@@ -54,6 +48,7 @@ const userSchema = new mongoose.Schema({
   panCardNumber: {
     type: String,
     unique: true,
+    required: true,
   },
 
   dematNumber: {
