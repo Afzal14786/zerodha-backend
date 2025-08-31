@@ -66,10 +66,27 @@ export const verifyPhoneOtp = async (req, res) => {
 
     const existingUser = await userModel.findOne({ phone: tenDigitPhone });
     if (existingUser) {
+      const accessToken = generateAccessToken({ id: existingUser._id });
+      const refreshToken = generateRefreshToken({ id: existingUser._id });
+
+      await redis.set(`refresh:${existingUser._id}`, refreshToken, 'EX', 7 * 24 * 3600);
+
       return res.json({
         success: true,
         userExists: true,
-        message: "User already have an account with the same number."
+        message: "User already have an account with the same number.",
+        data: {
+          user: {
+            id: existingUser._id,
+            name: existingUser.name,
+            userId: existingUser.userId,
+            profile: existingUser.profile,
+          },
+          tokens: {
+            accessToken,
+            refreshToken
+          },
+        }
       });
     }
 
@@ -79,6 +96,7 @@ export const verifyPhoneOtp = async (req, res) => {
       success: true,
       message: "Phone verified",
     });
+    
   } catch (error) {
     console.error(`Error While Verifying OTP : ${error}`);
     return res.status(400).json({
@@ -235,3 +253,35 @@ export const setPasswordAndCreateAccount = async (req, res) => {
     });
   }
 };
+
+/**
+ * Just after creating the account, user navigate the accout-active page, for that page we need to display some data, like
+ * User_ID and USer_Name, and Profile Image,
+ */
+
+export const getAccountActiveData = async(req, res)=> {
+  try {
+    const userId = req.user.id;
+    const user = await userModel.findById(userId).select("userId name profile");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User Not Found",
+      });
+    }
+
+
+    return res.json({
+      success: true,
+      data: user,
+    });
+
+  } catch(err) {
+    console.error(`Error While Fetching The Data From MongoDB : ${err}`);
+    return res.json({
+      success: false,
+      message: "Failed To Get Data",
+    });
+  }
+}

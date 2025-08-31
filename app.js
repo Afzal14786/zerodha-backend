@@ -7,6 +7,7 @@ import dbConnection from "./database/dbConnection.js";
 import holdingRouter from "./routers/holding.route.js";
 import positionRouter from "./routers/position.router.js";
 import registerRoute from "./routers/user/register.router.js";
+import userRoute from "./routers/user/user.router.js";
 
 dotenv.config({quiet:true});
 const app = express();
@@ -21,6 +22,7 @@ app.use(urlencoded({extended: true}));
 app.use("/api/v1/holdings", holdingRouter);
 app.use("/api/v1/positions", positionRouter);
 app.use("/api/v1/user/register", registerRoute);
+app.use("api/v1/user", userRoute);
 
 
 // app.get('/', (req, res)=> {
