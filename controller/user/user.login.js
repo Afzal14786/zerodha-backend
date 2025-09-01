@@ -3,7 +3,8 @@ import userModel from "../../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../../config/jwt.js";
 import redis from "../../config/redisClint.js";
 import sendOtpToEmail from "../../helper/sendOtpToEmail.js";
-import { normalizePhone } from "../../controller/user/user.register.js";
+
+const isTenDigitPhone = (input) => /^\d{10}$/.test(input);
 
 export const userLogin = async (req, res) => {
     const { identifier, password } = req.body;
@@ -11,63 +12,67 @@ export const userLogin = async (req, res) => {
     if (!identifier || !password) {
         return res.status(400).json({
             success: false,
-            message: "Phone/User ID & password are required",
+            message: "Phone/User ID & password are required.",
         });
     }
 
     try {
         let user;
-        let otpSentVia;
-        
-        if (identifier.length === 7) { 
-            user = await userModel.findOne({ userId: identifier });
-            otpSentVia = "email";
+        let loginType;
+
+        if (isTenDigitPhone(identifier)) {
+            user = await userModel.findOne({ phone: identifier.trim() });
+            loginType = "phone";
+        } else if (identifier.length === 7) {
+            user = await userModel.findOne({ userId: identifier.trim() });
+            loginType = "email";
         } else {
-            
-            let tenDigitPhone = normalizePhone(identifier);
-            user = await userModel.findOne({ phone: tenDigitPhone });
-            otpSentVia = "phone";
+            return res.status(400).json({
+                success: false,
+                message: "Invalid identifier format. Must be a 7-digit User ID or a 10-digit phone number.",
+            });
         }
 
         if (!user) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
-                message: "Invalid credentials",
+                message: "User not found.",
             });
         }
 
         const matchPassword = await bcrypt.compare(password, user.password);
         if (!matchPassword) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
-                message: "Invalid credentials",
+                message: "Incorrect password.",
             });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await redis.set(`otp:login:${identifier}`, otp, "EX", 300);
-
-        if (otpSentVia === "email") {
+        if (loginType === "email") {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            await redis.set(`otp:login:${identifier}`, otp, "EX", 300); // 5 min expiry
             await sendOtpToEmail(user.email, otp);
+
             return res.json({
                 success: true,
-                message: `OTP sent to email.`,
+                message: "OTP sent to your email.",
                 auth_type: "email",
-                identifier: user.userId
-            });
-        } else {
-            return res.json({
-                success: true,
-                message: `OTP sent to your phone.`,
-                auth_type: "phone",
-                identifier: user.phone
+                identifier: user.userId,
             });
         }
-    } catch(err) {
-        console.error(`Error while login: ${err}`);
-        return res.status(400).json({
+
+        return res.json({
+            success: true,
+            message: "Password verified. Please verify OTP using Firebase.",
+            auth_type: "phone",
+            identifier: user.phone,
+        });
+
+    } catch (err) {
+        console.error(`Error during login:`, err);
+        return res.status(500).json({
             success: false,
-            message: `Something went wrong while login`
+            message: "Server error during login. Please try again later.",
         });
     }
 };
@@ -81,16 +86,22 @@ export const verifyLoginOtp = async (req, res) => {
             message: "Phone/User ID and OTP are required.",
         });
     }
-    
+
     try {
         let user;
-        if (identifier.length === 7) {
-            user = await userModel.findOne({ userId: identifier });
+        const isPhoneLogin = isTenDigitPhone(identifier);
+
+        if (isPhoneLogin) {
+            user = await userModel.findOne({ phone: identifier.trim() });
+        } else if (identifier.length === 7) {
+            user = await userModel.findOne({ userId: identifier.trim() });
         } else {
-            const tenDigitPhone = normalizePhone(identifier);
-            user = await userModel.findOne({ phone: tenDigitPhone });
+            return res.status(400).json({
+                success: false,
+                message: "Invalid identifier format.",
+            });
         }
-        
+
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -98,22 +109,40 @@ export const verifyLoginOtp = async (req, res) => {
             });
         }
 
-        const storedOtp = await redis.get(`otp:login:${identifier}`);
-        if (!storedOtp || storedOtp !== otp) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid or expired OTP.",
-            });
+        if (!isPhoneLogin) {
+            // Email login OTP verification
+            const storedOtp = await redis.get(`otp:login:${identifier}`);
+            if (!storedOtp || storedOtp !== otp) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid or expired OTP.",
+                });
+            }
+        } else {
+            if (otp !== "verified") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Phone OTP not verified.",
+                });
+            }
         }
 
+        // Issue tokens
         const accessToken = generateAccessToken({ id: user._id });
         const refreshToken = generateRefreshToken({ id: user._id });
 
         await redis.set(`refresh:${user._id}`, refreshToken, "EX", 7 * 24 * 3600);
 
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 3600 * 1000,
+        });
+
         return res.status(200).json({
             success: true,
-            message: "Logged in successfully!",
+            message: "Login successful.",
             data: {
                 user: {
                     id: user._id,
@@ -122,26 +151,30 @@ export const verifyLoginOtp = async (req, res) => {
                     phone: user.phone,
                     userId: user.userId,
                     profile: user.profile,
+                    bankAccountNumber: user.bankAccountNumber,
+                    bankName: user.bankName,
+                    panCardNumber: user.panCardNumber,
+                    dematNumber: user.dematNumber,
+                    supportCode: user.supportCode,
                 },
-                tokens: { accessToken, refreshToken },
+                tokens: { accessToken },
             },
         });
-
     } catch (error) {
         console.error("Error during OTP verification:", error);
         return res.status(500).json({
             success: false,
-            message: "An unexpected error occurred. Please try again.",
+            message: "Server error during OTP verification. Please try again.",
         });
     }
 };
 
-// now logout the user
-export const logoutUser = async(req, res)=> {
+export const logoutUser = async (req, res) => {
     try {
         const userId = req.user.id;
-        // let delete the user id
         const result = await redis.del(`refresh:${userId}`);
+        res.clearCookie("refreshToken");
+
         if (result === 1) {
             return res.status(200).json({
                 success: true,
@@ -150,14 +183,14 @@ export const logoutUser = async(req, res)=> {
         } else {
             return res.status(400).json({
                 success: false,
-                message: "User session not found!",
+                message: "Session not found.",
             });
         }
-    } catch(err) {
-        console.log(`Error while logout: ${err}`);
+    } catch (err) {
+        console.error(`Error during logout:`, err);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error While Logout The User!",
+            message: "Server error during logout.",
         });
     }
-}
+};
