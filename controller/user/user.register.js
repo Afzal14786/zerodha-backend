@@ -18,7 +18,7 @@ import admin from "../../config/firebaseAdmin.js";
  * this function  normalize the phone number format
  */
 
-const normalizePhone = (phone) => {
+export const normalizePhone = (phone) => {
   if (phone.startsWith("+91")) {
     return phone.slice(-10);
   }

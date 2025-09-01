@@ -8,6 +8,7 @@ import holdingRouter from "./routers/holding.route.js";
 import positionRouter from "./routers/position.router.js";
 import registerRoute from "./routers/user/register.router.js";
 import userRoute from "./routers/user/user.router.js";
+import loginRoute from './routers/user/login.router.js'
 
 dotenv.config({quiet:true});
 const app = express();
@@ -18,17 +19,21 @@ app.use(express.json());
 app.use(urlencoded({extended: true}));
 
 
-// router calls
+// router calls for registering the users
 app.use("/api/v1/holdings", holdingRouter);
 app.use("/api/v1/positions", positionRouter);
 app.use("/api/v1/user/register", registerRoute);
-app.use("api/v1/user", userRoute);
+
+// route calling for login the user into dashboard
+app.use("/api/v1/user", loginRoute);
+
+app.use("/api/v1/user", userRoute);
 
 
-// app.get('/', (req, res)=> {
-//     console.log(`Request from /`);
-//     res.send(`The Server Is Running Fine`);
-// })
+app.get('/', (req, res)=> {
+    console.log(`Request from /`);
+    res.send(`The Server Is Running Fine`);
+})
 
 
 // dbConnection 
