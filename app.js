@@ -13,7 +13,10 @@ import loginRoute from './routers/user/login.router.js'
 dotenv.config({quiet:true});
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // your React app origin
+  credentials: true,               // allow cookies
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(urlencoded({extended: true}));
@@ -32,7 +35,7 @@ app.use("/api/v1/user", userRoute);
 
 app.get('/', (req, res)=> {
     console.log(`Request from /`);
-    res.send(`The Server Is Running Fine`);
+    res.send(`The Server Is Running Fine on Port http://localhost:${process.env.PORT}`);
 })
 
 

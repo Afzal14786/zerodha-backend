@@ -262,7 +262,7 @@ export const setPasswordAndCreateAccount = async (req, res) => {
 export const getAccountActiveData = async(req, res)=> {
   try {
     const userId = req.user.id;
-    const user = await userModel.findById(userId).select("userId name profile");
+    const user = await userModel.findById(userId).select("-password -__v");
 
     if (!user) {
       return res.status(404).json({
