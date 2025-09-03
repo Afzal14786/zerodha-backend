@@ -22,7 +22,7 @@ export const updateProfileImage = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile image updated successfully",
       profileUrl: user.profile,
     });
   } catch (err) {
