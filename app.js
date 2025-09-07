@@ -9,6 +9,7 @@ import positionRouter from "./routers/position.router.js";
 import registerRoute from "./routers/user/register.router.js";
 import userRoute from "./routers/user/user.router.js";
 import loginRoute from './routers/user/login.router.js'
+import stockRoute from "./routers/stock.route.js";
 
 dotenv.config({quiet:true});
 const app = express();
@@ -32,6 +33,8 @@ app.use("/api/v1/user", loginRoute);
 
 app.use("/api/v1/user", userRoute);
 
+// the stock api
+app.use("/api/v1/stocks", stockRoute);
 
 app.get('/', (req, res)=> {
     console.log(`Request from /`);
