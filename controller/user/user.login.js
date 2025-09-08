@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import userModel from "../../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../../config/jwt.js";
 import redis from "../../config/redisClint.js";
-import sendOtpToEmail from "../../helper/sendOtpToEmail.js";
+import sendMail from "../../helper/sendMail.js";
 
 const isTenDigitPhone = (input) => /^\d{10}$/.test(input);
 
@@ -51,7 +51,7 @@ export const userLogin = async (req, res) => {
         if (loginType === "email") {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             await redis.set(`otp:login:${identifier}`, otp, "EX", 300); // 5 min expiry
-            await sendOtpToEmail(user.email, otp);
+            await sendMail(user.email, otp);
 
             return res.json({
                 success: true,

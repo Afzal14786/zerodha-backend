@@ -1,9 +1,11 @@
 import express from "express";
-import { addPositions, getAllPosition } from "../controller/position.controller.js";
+import { getAllPosition } from "../controller/position.controller.js";
+import {authMiddleware} from "../middleware/auth.middleware.js";
+
 const router = express.Router();
 
-router.get("/addPositions", addPositions);
-router.get("/allPositions", getAllPosition);
+// router.get("/addPositions", addPositions);
+router.get("/allPositions", authMiddleware, getAllPosition);
 
 
 export default router;

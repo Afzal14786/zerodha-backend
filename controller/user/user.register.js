@@ -11,7 +11,7 @@ import {
   generateSupportCode,
   generateUserId,
 } from "../../helper/user.helper.js";
-import sendOtpToEmail from "../../helper/sendOtpToEmail.js";
+import sendMail from "../../helper/sendMail.js";
 import admin from "../../config/firebaseAdmin.js";
 
 /**
@@ -122,7 +122,7 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
     const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
     await redis.set(`otp:email:${email}`, emailOtp, "EX", 300);
 
-    await sendOtpToEmail(email, emailOtp);
+    await sendMail(email, emailOtp);
 
     return res.json({
       success: true,

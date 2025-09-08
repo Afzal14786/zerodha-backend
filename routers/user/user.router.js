@@ -7,11 +7,18 @@ import { refreshMiddleware } from "../../middleware/refresh.middleware.js";
 import {storage} from "../../config/cloudinary.js"
 
 import { getAccountActiveData} from "../../controller/user/user.register.js";
-import {updateProfileImage} from "../../controller/user/user.updateProfile.js";
+import {updateProfileImage, changePassword, forgotPassoword, forgotUserId} from "../../controller/user/user.updateProfile.js";
 import {logoutUser} from "../../controller/user/user.login.js";
 
 const router = express.Router();
 const upload = multer({storage});
+
+/**
+ * these two are here because they are not required any 
+ * authentication
+ */
+router.post("/forgot-password", wrapError(forgotPassoword));
+router.post("/forgot-userId", wrapError(forgotUserId));
 
 router.use(refreshMiddleware);
 router.use(authMiddleware);
@@ -19,6 +26,7 @@ router.use(authMiddleware);
 
 router.get("/profile", wrapError(getAccountActiveData));
 router.post("/profile/upload", upload.single("profile"), updateProfileImage);
+router.post("/profile/update-password", wrapError(changePassword));
 router.post("/logout", wrapError(logoutUser));
 
 export default router;
