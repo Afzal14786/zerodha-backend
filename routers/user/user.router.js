@@ -7,7 +7,7 @@ import { refreshMiddleware } from "../../middleware/refresh.middleware.js";
 import {storage} from "../../config/cloudinary.js"
 
 import { getAccountActiveData} from "../../controller/user/user.register.js";
-import {updateProfileImage, changePassword, forgotPassoword, forgotUserId} from "../../controller/user/user.updateProfile.js";
+import {updateProfileImage, changePassword, forgotPassoword, resetPassword, forgotUserId} from "../../controller/user/user.updateProfile.js";
 import {logoutUser} from "../../controller/user/user.login.js";
 
 const router = express.Router();
@@ -19,6 +19,7 @@ const upload = multer({storage});
  */
 router.post("/forgot-password", wrapError(forgotPassoword));
 router.post("/forgot-userId", wrapError(forgotUserId));
+router.post("/reset-password/:token", wrapError(resetPassword));
 
 router.use(refreshMiddleware);
 router.use(authMiddleware);

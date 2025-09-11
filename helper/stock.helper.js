@@ -6,7 +6,6 @@
 // import { faker } from '@faker-js/faker';
 
 
-// // Some sample stock symbols & company names
 // const sampleCompanies = [
 //   { symbol: "RELIANCE", name: "Reliance Industries", exchange: "NSE" },
 //   { symbol: "HDFCBANK", name: "HDFC Bank", exchange: "NSE" },
@@ -64,7 +63,6 @@
 //   { symbol: "ABB", name: "ABB India", exchange: "NSE" },
 //   { symbol: "HEROMOTOCO", name: "Hero MotoCorp", exchange: "NSE" },
 //   { symbol: "POLYCAB", name: "Polycab India", exchange: "NSE" }
-//   // … continue adding manually until you reach ~200 entries
 // ];
 
 

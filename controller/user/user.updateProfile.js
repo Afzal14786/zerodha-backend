@@ -1,5 +1,6 @@
 import userModel from "../../models/user.model.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import sendEmail from "../../helper/sendMail.js";
 // this will update the profile image
 export const updateProfileImage = async (req, res) => {
@@ -86,24 +87,26 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// implement reset password
+/**
+ * When user forgot the password then he need to provide the userID, or email 
+ */
 
 export const forgotPassoword = async (req, res) => {
   try {
-    const { userId, email } = req.body;
-    const user = await userModel.findOne({ userId, email });
+    const { email } = req.body; 
+    const user = await userModel.findOne({ email }); // Only find by email
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "User not found with provided userid or email",
+        message: "User not found with provided email", // Updated message
       });
     }
 
     const resetToken = user.createPasswordResetToken();
     await user.save();
 
-    const resetUrl = `http://localhost:5174/reset-password/${resetToken}`;
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
     const message = `Please use the following link to reset your password: ${resetUrl}`;
 
     await sendEmail({
@@ -124,6 +127,46 @@ export const forgotPassoword = async (req, res) => {
     });
   }
 };
+
+export const resetPassword = async(req, res)=> {
+  try {
+    const {token} = req.params;
+    const {newPassword} = req.body;
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await userModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: {$gt: Date.now()},
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Password reset token is expired or invalid",
+      });
+    }
+
+    const hashNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashNewPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully.",
+    });
+
+
+  } catch(err) {
+    console.error(`Error while resetting the password : ${err}`);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
 
 /**
  * Now if user, forgot the userId then just take

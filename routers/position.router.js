@@ -5,7 +5,7 @@ import {authMiddleware} from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // router.get("/addPositions", addPositions);
-router.get("/allPositions", authMiddleware, getAllPosition);
+router.get("/all-positions", authMiddleware, getAllPosition);
 
 
 export default router;

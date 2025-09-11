@@ -6,14 +6,27 @@ const positionSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    product: String,
-    name: String,
-    qty: Number,
-    avg: Number,
-    price: Number,
-    net: String,
-    day: String,
-    isLoss: Boolean,
+    symbol: {
+        type: String,
+        required: true,
+    },
+    productType: {
+        type: String,
+        required: true,
+    },
+    quantity: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    avgPrice: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
 });
+
+
+positionSchema.index({ user: 1, symbol: 1 }, { unique: true });
 
 export default positionSchema;

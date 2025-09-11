@@ -8,14 +8,15 @@ import holdingRouter from "./routers/holding.route.js";
 import positionRouter from "./routers/position.router.js";
 import registerRoute from "./routers/user/register.router.js";
 import userRoute from "./routers/user/user.router.js";
-import loginRoute from './routers/user/login.router.js'
+import loginRoute from './routers/user/login.router.js';
 import stockRoute from "./routers/stock.route.js";
+import orderRoute from "./routers/order.router.js";
 
 dotenv.config({quiet:true});
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"], // our frontend/dashboard (react) app origin
+  origin: ["http://localhost:5173", "http://localhost:3000"], // frontend/dashboard (react) app origin
   credentials: true,               // allow cookies
 }));
 app.use(cookieParser());
@@ -35,6 +36,8 @@ app.use("/api/v1/user", userRoute);
 
 // the stock api
 app.use("/api/v1/stocks", stockRoute);
+// user place a new order
+app.use("/api/v1/order", orderRoute);
 
 app.get('/', (req, res)=> {
     console.log(`Request from /`);

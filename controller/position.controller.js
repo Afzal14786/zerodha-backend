@@ -1,57 +1,41 @@
 import positionModel from "../models/position.model.js";
+import { fetchLiveStockPrice } from "../services/stockService.js"; // Your mock data function
 
-// export const addPositions = async (req, res) => {
-//   let tempPositionData = [
-//     {
-//       product: "CNC",
-//       name: "EVEREADY",
-//       qty: 2,
-//       avg: 316.27,
-//       price: 312.35,
-//       net: "+0.58%",
-//       day: "-1.24%",
-//       isLoss: true,
-//     },
-//     {
-//       product: "CNC",
-//       name: "JUBLFOOD",
-//       qty: 1,
-//       avg: 3124.75,
-//       price: 3082.65,
-//       net: "+10.04%",
-//       day: "-1.35%",
-//       isLoss: true,
-//     },
-//   ];
-
-//     tempPositionData.forEach((item)=> {
-//         let newPosition = new positionModel({
-//             product: item.product,
-//             name: item.name,
-//             qty: item.qty,
-//             avg: item.avg,
-//             price: item.price,
-//             net: item.net,
-//             day: item.day,
-//             isLoss: item.isLoss
-//         });
-
-//         newPosition.save();
-//     });
-
-//     res.send("Add Position Data Saved !");
-// };
-
-
-export const getAllPosition = async(req, res) => {
+/**
+ * This feature is not yet working, still in process, because of data
+ */
+export const getAllPosition = async (req, res) => {
     try {
       const userId = req.user.id;
-      const allPosition = await positionModel.findOne({user: userId});
+      const positions = await positionModel.find({ user: userId });
 
-      res.json(allPosition);
+      const enrichedPositions = [];
+      for (const position of positions) {
+          // Mock live market data
+          const liveData = fetchLiveStockPrice(position.avgPrice);
+
+          // Calculate Unrealized P&L
+          const pnl = (liveData.currentPrice - position.avgPrice) * position.quantity;
+          const isLoss = pnl < 0;
+
+          // Format and enrich the data for the frontend
+          enrichedPositions.push({
+              name: position.symbol,
+              product: position.productType,
+              qty: position.quantity,
+              avg: parseFloat(position.avgPrice.toFixed(2)),
+              price: liveData.currentPrice,
+              pnl: parseFloat(pnl.toFixed(2)),
+              net: `${liveData.dayChangePercentage > 0 ? '+' : ''}${liveData.dayChangePercentage.toFixed(2)}%`,
+              day: `${liveData.dayChangeAmount > 0 ? '+' : ''}${liveData.dayChangeAmount.toFixed(2)}`,
+              isLoss: isLoss,
+          });
+      }
+      
+      res.json(enrichedPositions);
 
     } catch (err) {
-      console.error(`Error while fatching the postion from server : ${err}`);
+      console.error(`Error while fetching the position from server: ${err}`);
       return res.status(500).json({
         success: false,
         message: "Internal server error",
