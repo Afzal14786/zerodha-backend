@@ -12,15 +12,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// HIGHLIGHT: Make the function more generic
+
 const sendEmail = async (options) => {
   try {
     await transporter.sendMail({
       from: `"Support" <${process.env.SMTP_USER}>`,
       to: options.to,
       subject: options.subject,
-      html: options.html, // Use options.html for flexibility
-      text: options.text, // Use options.text for flexibility
+      html: options.html,
+      text: options.text,
     });
     console.log("Email sent successfully!");
     return true;
@@ -30,5 +30,5 @@ const sendEmail = async (options) => {
   }
 };
 
-// HIGHLIGHT: Export the new generic function
+
 export default sendEmail;

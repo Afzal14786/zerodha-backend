@@ -11,7 +11,7 @@ import {
   generateSupportCode,
   generateUserId,
 } from "../../helper/user.helper.js";
-import sendMail from "../../helper/sendMail.js";
+import sendEmail from "../../helper/sendMail.js";
 import admin from "../../config/firebaseAdmin.js";
 
 /**
@@ -69,7 +69,12 @@ export const verifyPhoneOtp = async (req, res) => {
       const accessToken = generateAccessToken({ id: existingUser._id });
       const refreshToken = generateRefreshToken({ id: existingUser._id });
 
-      await redis.set(`refresh:${existingUser._id}`, refreshToken, 'EX', 7 * 24 * 3600);
+      await redis.set(
+        `refresh:${existingUser._id}`,
+        refreshToken,
+        "EX",
+        7 * 24 * 3600
+      );
 
       return res.json({
         success: true,
@@ -84,9 +89,9 @@ export const verifyPhoneOtp = async (req, res) => {
           },
           tokens: {
             accessToken,
-            refreshToken
+            refreshToken,
           },
-        }
+        },
       });
     }
 
@@ -96,7 +101,6 @@ export const verifyPhoneOtp = async (req, res) => {
       success: true,
       message: "Phone verified",
     });
-    
   } catch (error) {
     console.error(`Error While Verifying OTP : ${error}`);
     return res.status(400).json({
@@ -118,11 +122,16 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
     }
 
     // Use the phone number as received from the frontend for Redis key
-    await redis.hset(`lead:${phone}`, 'name', name, 'email', email);
+    await redis.hset(`lead:${phone}`, "name", name, "email", email);
     const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
     await redis.set(`otp:email:${email}`, emailOtp, "EX", 300);
 
-    await sendMail(email, emailOtp);
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Code",
+      text: `Your OTP is: ${emailOtp}`,
+      html: `<p>Your OTP is: <strong>${emailOtp}</strong></p>`,
+    });
 
     return res.json({
       success: true,
@@ -154,7 +163,7 @@ export const saveLeadAndVerifyOtp = async (req, res) => {
 
 export const setPasswordAndCreateAccount = async (req, res) => {
   const { phone, password } = req.body;
-  
+
   const normalizedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
 
   const phoneVerified = await redis.get(`verified:phone:${normalizedPhone}`);
@@ -174,7 +183,7 @@ export const setPasswordAndCreateAccount = async (req, res) => {
       message: "User already exists. Cannot create a new account.",
     });
   }
-  
+
   const leadInfo = await redis.hgetall(`lead:${normalizedPhone}`);
 
   if (!leadInfo || !leadInfo.email || !leadInfo.name) {
@@ -191,7 +200,7 @@ export const setPasswordAndCreateAccount = async (req, res) => {
       message: "Email not verified",
     });
   }
-  
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = generateUserId();
@@ -200,19 +209,22 @@ export const setPasswordAndCreateAccount = async (req, res) => {
     const dematNumber = generateDematNumber();
     const panCardNumber = generatePanCardNumber();
     const supportCode = generateSupportCode();
-    
+
     let profileImage = null;
     try {
-        profileImage = await generateUserImage(leadInfo.name);
+      profileImage = await generateUserImage(leadInfo.name);
     } catch (err) {
-        console.error("Failed to generate user image, continuing without it.", err);
+      console.error(
+        "Failed to generate user image, continuing without it.",
+        err
+      );
     }
 
     const newUser = new userModel({
       userId,
       name: leadInfo.name,
       email: leadInfo.email,
-      phone: tenDigitPhone, 
+      phone: tenDigitPhone,
       password: hashedPassword,
       profile: profileImage,
       bankAccountNumber,
@@ -227,7 +239,12 @@ export const setPasswordAndCreateAccount = async (req, res) => {
     const accessToken = generateAccessToken({ id: newUser._id });
     const refreshToken = generateRefreshToken({ id: newUser._id });
 
-    await redis.set(`refresh:${newUser._id}`, refreshToken, 'EX', 7 * 24 * 3600);
+    await redis.set(
+      `refresh:${newUser._id}`,
+      refreshToken,
+      "EX",
+      7 * 24 * 3600
+    );
 
     return res.status(201).json({
       success: true,
@@ -242,11 +259,10 @@ export const setPasswordAndCreateAccount = async (req, res) => {
         tokens: { accessToken, refreshToken },
       },
     });
-
   } catch (err) {
     console.error("Mongoose Save Error:", err.name, err.message);
     console.error("Full Error Object:", err);
-    
+
     return res.status(500).json({
       success: false,
       message: "Failed to create account. Please try again.",
@@ -259,7 +275,7 @@ export const setPasswordAndCreateAccount = async (req, res) => {
  * User_ID and USer_Name, and Profile Image,
  */
 
-export const getAccountActiveData = async(req, res)=> {
+export const getAccountActiveData = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await userModel.findById(userId).select("-password -__v");
@@ -271,17 +287,15 @@ export const getAccountActiveData = async(req, res)=> {
       });
     }
 
-
     return res.json({
       success: true,
       data: user,
     });
-
-  } catch(err) {
+  } catch (err) {
     console.error(`Error While Fetching The Data From MongoDB : ${err}`);
     return res.json({
       success: false,
       message: "Failed To Get Data",
     });
   }
-}
+};
