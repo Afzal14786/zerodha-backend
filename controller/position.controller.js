@@ -1,5 +1,5 @@
 import positionModel from "../models/position.model.js";
-import { fetchLiveStockPrice } from "../services/stockService.js"; // Your mock data function
+import { fetchLiveStockPrice } from "../services/stockService.js";
 
 /**
  * This feature is not yet working, still in process, because of data

@@ -10,7 +10,7 @@
 //   { symbol: "RELIANCE", name: "Reliance Industries", exchange: "NSE" },
 //   { symbol: "HDFCBANK", name: "HDFC Bank", exchange: "NSE" },
 //   { symbol: "TCS", name: "Tata Consultancy Services", exchange: "NSE" },
-//   { symbol: "BHARTIARTL", name: "Bharti Airtel", exchange: "NSE" },                     //  Reuters: top companies by market cap :contentReference[oaicite:0]{index=0}
+//   { symbol: "BHARTIARTL", name: "Bharti Airtel", exchange: "NSE" },
 //   { symbol: "ICICIBANK", name: "ICICI Bank", exchange: "NSE" },
 //   { symbol: "SBIN", name: "State Bank of India", exchange: "NSE" },
 //   { symbol: "HINDUNILVR", name: "Hindustan Unilever", exchange: "NSE" },
@@ -45,7 +45,7 @@
 //   { symbol: "INDUSINDBK", name: "IndusInd Bank", exchange: "NSE" },
 //   { symbol: "HDFCLIFE", name: "HDFC Life", exchange: "NSE" },
 //   { symbol: "TATACONSUM", name: "Tata Consumer Products", exchange: "NSE" },
-//   { symbol: "ETERNAL", name: "Eternal (Zomato)", exchange: "NSE" },                        // from largest companies :contentReference[oaicite:1]{index=1}
+//   { symbol: "ETERNAL", name: "Eternal (Zomato)", exchange: "NSE" },
 //   { symbol: "JIOFIN", name: "Jio Financial Services", exchange: "NSE" },
 //   { symbol: "SHRIRAMFIN", name: "Shriram Finance", exchange: "NSE" },
 //   { symbol: "INDIGO", name: "InterGlobe Aviation (IndiGo)", exchange: "NSE" },

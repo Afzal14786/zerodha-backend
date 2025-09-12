@@ -62,7 +62,7 @@ OTPs and temporary session data are cached in Redis for blazing-fast authenticat
    - User registers via **Landing Page**.
    - Phone/email OTP verification.
    - Password setup.
-   - 🎁 Random portfolio & data auto-generated for user realism.
+   - Random portfolio & data auto-generated for user realism.
 
 2. **Login**
 
@@ -777,6 +777,18 @@ npm run dev
 ```  
 
 ---  
+
+### Note:
+> ⚠️ Important:
+> All the data except your `name`, `email`
+> are auto generated .  
+> Internally there are function running for generating dummy data
+for making the project more reliestics .  
+> If you are interested how it is generated so frequently,
+> go through the `api endpoints` for order section as well as go through `register api endpoint`.  
+> So, you get to know what kind of dummy data is generated for make this project realistics .  
+
+---
 
 #### Go through the dashboard & frontend repository for more details  
 
