@@ -51,7 +51,12 @@ export const userLogin = async (req, res) => {
         if (loginType === "email") {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             await redis.set(`otp:login:${identifier}`, otp, "EX", 300); // 5 min expiry
-            await sendEmail(user.email, otp);
+            await sendEmail({
+                to: user.email,
+                subject: "Verify OTP Code",
+                text: `Your 6 Digit OTP is ${otp}`,
+                html: `<p>Your 6 Digit OTP is: <strong>${otp}</strong></p>`,
+            });
 
             return res.json({
                 success: true,
