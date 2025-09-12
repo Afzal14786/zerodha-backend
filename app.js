@@ -15,9 +15,25 @@ import orderRoute from "./routers/order.router.js";
 dotenv.config({quiet:true});
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.DASHBOARD_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: [process.env.DASHBOARD_URL, process.env.FRONTEND_URL], // frontend/dashboard (react) app origin
-  credentials: true,               // allow cookies
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.warn(`Blocked CORS request from: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 app.use(cookieParser());
@@ -40,10 +56,6 @@ app.use("/api/v1/stocks", stockRoute);
 // user place a new order
 app.use("/api/v1/order", orderRoute);
 
-app.get('/', (req, res)=> {
-    console.log(`Request from /`);
-    res.send(`The Server Is Running Fine on Port http://localhost:${process.env.PORT}`);
-})
 
 
 // dbConnection 
