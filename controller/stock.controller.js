@@ -1,26 +1,4 @@
-// controllers/stock.controller.js
 import Stock from "../schemas/stock.schema.js";
-// this will generate the dummy data
-
-// import { generateDummyStocks } from "../helper/stock.helper.js";
-
-// Seed DB with dummy data (only if empty)
-// export const seedStocks = async (req, res) => {
-//   try {
-//     const existing = await Stock.countDocuments();
-//     if (existing > 0) {
-//       return res.status(400).send("Stocks already exist. Skipping seed.");
-//     }
-
-//     const stocks = generateDummyStocks(300);
-//     await Stock.insertMany(stocks);
-
-//     res.send("Dummy Stock Data Inserted.");
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send(" Error seeding stocks.");
-//   }
-// };
 
 
 export const updateStocks = async (req, res) => {
