@@ -67,7 +67,7 @@ export const placeOrder = async (req, res) => {
      */
 
     const total = quantity * price;
-    const isin = await generateISIN();
+    const isin = generateISIN();
     const transactionId = await generateTransactionId();
 
     const newOrder = new orderModel({

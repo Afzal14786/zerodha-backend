@@ -16,9 +16,10 @@ dotenv.config({quiet:true});
 const app = express();
 
 app.use(cors({
-  origin: [process.env.DASHBOARD_API, process.env.FRONTEND_API], // frontend/dashboard (react) app origin
+  origin: [process.env.DASHBOARD_URL, process.env.FRONTEND_URL], // frontend/dashboard (react) app origin
   credentials: true,               // allow cookies
 }));
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(urlencoded({extended: true}));
